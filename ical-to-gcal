@@ -1,0 +1,43 @@
+#!/usr/bin/env perl
+
+use strict;
+use Net::Google::Calendar;
+use Net::Netrc;
+use iCal::Parser;
+use LWP::Simple;
+use Getopt::Long;
+
+my ($calendar, $ical_url);
+Getopt::Long::GetOptions(
+    "calendar|c=s"      => \$calendar,
+    "ical_url|ical|i=s" => $ical_url,
+) or die "Failed to parse options";
+
+my $ical_data = LWP::Simple::get($ical_url)
+    or die "Failed to fetch $ical_url";
+
+my $ic = iCal::Parser->new;
+
+my $ical = $ic->parse_strings($ical_data)
+    or die "Failed to parse iCal data";
+
+# We get events keyed by year, month, day - we just want a flat list of events
+# to walk through.  Do this keyed by the event ID, so that multiple-day events
+# are handled appropriately.  We'll want this hash anyway to do a pass through
+# all events on the Google Calendar, removing any that are no longer in the
+# iCal feed.
+
+my %events;
+for my $year (keys %{ $ical->{events} }) {
+    for my $month (keys %{ $ical->{events}{$year} }) {
+        for my $day (keys %{ $ical->{events}{$year}{$month} }) {
+            for my $event (@{ $ical->{events}{$year}{$month}{$day} }) {
+                $events{ $event->{UID} } = $event;
+            }
+        }
+    }
+}
+
+# Right, we can now walk through each event in $events
+
+
