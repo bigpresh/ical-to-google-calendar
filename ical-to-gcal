@@ -106,21 +106,28 @@ for my $event ($gcal->get_events) {
 }
 
 
-# Now, walk through the ical events we found, and see which ones weren't in the
-# Google calendar, and create them
+# Now, walk through the ical events we found, and create/update Google Calendar
+# events
 for my $ical_uid (keys %ical_events) {
-    next if exists $gcal_events{$ical_uid};
+    
+    my $gcal_event;
 
-    print "Need to create ical event $ical_uid in gcal\n";
+    if (exists $gcal_events{$ical_uid}) {
+        $gcal_event = $gcal_events{$ical_uid};
+        print "Need to update ical event $ical_uid in gcal\n";
+    } else {
+        $gcal_event = Net::Google::Calendar::Entry->new;
+        print "Need to create new gcal event for $ical_uid\n";
+    }
 
-    # TODO: create the event
     my $ical_event = $ical_events{$ical_uid};
-    my $gcal_event = Net::Google::Calendar::Entry->new;
     $gcal_event->title(    $ical_event->{SUMMARY}  );
     $gcal_event->location( $ical_event->{LOCATION} );
     $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
-    $gcal->add_entry($gcal_event)
-        or warn "Failed to add gCal event for $ical_uid";
+
+    my $method = exists $gcal_events{$ical_uid} ? 'update_entry' : 'add_entry';
+    $gcal->$method($gcal_event)
+        or warn "Failed to $method for $ical_uid";
 }
 
 
