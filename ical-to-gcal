@@ -10,8 +10,15 @@ use Getopt::Long;
 my ($calendar, $ical_url);
 Getopt::Long::GetOptions(
     "calendar|c=s"      => \$calendar,
-    "ical_url|ical|i=s" => $ical_url,
+    "ical_url|ical|i=s" => \$ical_url,
 ) or die "Failed to parse options";
+
+if (!$ical_url) {
+    die "An iCal URL must be provided (--ical_url=....)";
+}
+if (!$calendar) {
+    die "You must specify the calendar name (--calendar=...)";
+}
 
 my $ical_data = LWP::Simple::get($ical_url)
     or die "Failed to fetch $ical_url";
@@ -31,13 +38,18 @@ my %events;
 for my $year (keys %{ $ical->{events} }) {
     for my $month (keys %{ $ical->{events}{$year} }) {
         for my $day (keys %{ $ical->{events}{$year}{$month} }) {
-            for my $event (@{ $ical->{events}{$year}{$month}{$day} }) {
-                $events{ $event->{UID} } = $event;
+            for my $event_uid (keys %{ $ical->{events}{$year}{$month}{$day} }) {
+                $events{ $event_uid }
+                    = $ical->{events}{$year}{$month}{$day}{$event_uid};
             }
         }
     }
 }
 
 # Right, we can now walk through each event in $events
-
+for my $event_uid (keys %events) {
+    my $event = $events{$event_uid};
+    printf "$event_uid (%s at %s)\n",
+        @$event{ qw (SUMMARY LOCATION) };
+}
 
