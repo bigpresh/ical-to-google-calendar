@@ -79,7 +79,7 @@ my %gcal_events;
 
 gcal_event:
 for my $event ($gcal->get_events) {
-    my $ical_uid = $event->extended_property('ical_imported_uid');
+    my ($ical_uid) = $event->content =~ m{\[ical_imported_uid:(.+)\]};
 
     # If there's no ical uid, we presumably didn't create this, so leave it
     # alone
@@ -111,13 +111,15 @@ for my $event ($gcal->get_events) {
 # events
 for my $ical_uid (keys %ical_events) {
     
-    my $gcal_event;
+    my ($method, $gcal_event);
 
     if (exists $gcal_events{$ical_uid}) {
         $gcal_event = $gcal_events{$ical_uid};
+        $method = 'update_entry';
         print "Need to update ical event $ical_uid in gcal\n";
     } else {
         $gcal_event = Net::Google::Calendar::Entry->new;
+        $method = 'add_entry';
         print "Need to create new gcal event for $ical_uid\n";
     }
 
@@ -125,9 +127,11 @@ for my $ical_uid (keys %ical_events) {
     $gcal_event->title(    $ical_event->{SUMMARY}  );
     $gcal_event->location( $ical_event->{LOCATION} );
     $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
-    $gcal_event->extended_property('ical_imported_uid', $ical_uid);
 
-    my $method = exists $gcal_events{$ical_uid} ? 'update_entry' : 'add_entry';
+    if ($method eq 'add_entry') {
+        $gcal_event->content("[ical_imported_uid:$ical_uid]");
+    }
+
     $gcal->$method($gcal_event)
         or warn "Failed to $method for $ical_uid";
 }
