@@ -76,6 +76,7 @@ $calendar->set_calendar($desired_calendar);
 # feed, it's one to delete.
 
 gcal_event:
+my %gcal_events;
 for my $event ($calendar->get_events) {
     my $ical_uid = $event->extended_property('ical_imported_uid');
 
@@ -99,6 +100,20 @@ for my $event ($calendar->get_events) {
 
     # Now check for any differences, and update if required
 
+    # Remember that we found this event, so we can refer to it when looking for
+    # events we need to create
+    $gcal_events{$ical_uid} = $event;
+}
+
+
+# Now, walk through the ical events we found, and see which ones weren't in the
+# Google calendar, and create them
+for my $ical_uid (keys %ical_events) {
+    next if exists $gcal_events{$ical_uid};
+
+    print "Need to create ical event $ical_uid in gcal\n";
+
+    # TODO: create the event
 }
 
 
