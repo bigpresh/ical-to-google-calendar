@@ -34,12 +34,12 @@ my $ical = $ic->parse_strings($ical_data)
 # all events on the Google Calendar, removing any that are no longer in the
 # iCal feed.
 
-my %events;
+my %ical_events;
 for my $year (keys %{ $ical->{events} }) {
     for my $month (keys %{ $ical->{events}{$year} }) {
         for my $day (keys %{ $ical->{events}{$year}{$month} }) {
             for my $event_uid (keys %{ $ical->{events}{$year}{$month}{$day} }) {
-                $events{ $event_uid }
+                $ical_events{ $event_uid }
                     = $ical->{events}{$year}{$month}{$day}{$event_uid};
             }
         }
@@ -47,8 +47,8 @@ for my $year (keys %{ $ical->{events} }) {
 }
 
 # Right, we can now walk through each event in $events
-for my $event_uid (keys %events) {
-    my $event = $events{$event_uid};
+for my $event_uid (keys %ical_events) {
+    my $event = $ical_events{$event_uid};
     printf "$event_uid (%s at %s)\n",
         @$event{ qw (SUMMARY LOCATION) };
 }
@@ -91,7 +91,7 @@ for my $event ($calendar->get_events) {
 
     # OK, if this event didn't appear in the iCal feed, it has been deleted at
     # the other end, so we should delete it from our Google calendar:
-    if (!$events{$ical_uid}) {
+    if (!$ical_events{$ical_uid}) {
         printf "Event %s (%s) should be deleted\n",
             $event->id, $event->title;
         # TODO: actually delete, once testing shows correct behaviour
