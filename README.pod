@@ -30,11 +30,24 @@ Of course, you'll want to ensure that file is well protected.
 
 =head1 USAGE
 
-    ./ical-to-gcal --calendar 'Calendar Name' ical_url
+    ./ical-to-gcal --calendar 'Calendar Name' --ical_url ical_url
 
 The script will fetch the iCal calendar feed, then for each event in it,
 add/update an event in your Google Calendar (the ID from the iCal feed is added
 in the extra data of the event in the Google Calendar, so the script can match
 them up next time).
 
+The calendar name you provide must already exist in your Google Calendar
+account.
+
+The script adds a tag to each event's content to store the UID of the event
+imported from the iCal feed so that events can be updated in future, or deleted
+if they are no longer present in the source iCal feed.  If you remove this tag
+from an event, a new (duplicate) event will be created next time the script runs
+(and the old event will be "orphaned") - so don't do that.
+
+
+=head1 AUTHOR
+
+David Precious C<< <davidp@preshweb.co.uk> >>
 
