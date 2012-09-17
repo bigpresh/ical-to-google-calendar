@@ -53,3 +53,53 @@ for my $event_uid (keys %events) {
         @$event{ qw (SUMMARY LOCATION) };
 }
 
+
+# Get our login details, and find the Google calendar in question:
+my $mach = Net::Netrc->lookup('calendar.google.com')
+    or die "No login details for calendar.google.com in ~/.netrc";
+my ($user, $pass) = $mach->lpa;
+
+
+my $gcal = Net::Google::Calendar->new;
+$gcal->login($user, $pass)
+    or die "Google Calendar login failed";
+
+my ($desired_calendar) = grep { $_->title eq $calendar } $gcal->get_calendars;
+
+if (!$desired_calendar) {
+    die "No calendar named $calendar found!";
+}
+$calendar->set_calendar($desired_calendar);
+
+# Fetch all events from this calendar, parse out the ical feed's UID and whack
+# them in a hash keyed by the UID; if that UID no longer appears in the ical
+# feed, it's one to delete.
+
+gcal_event:
+for my $event ($calendar->get_events) {
+    my $ical_uid = $event->extended_property('ical_imported_uid');
+
+    # If there's no ical uid, we presumably didn't create this, so leave it
+    # alone
+    if (!$ical_uid) {
+        warn sprintf "Event %s (%s) ignored as it has no "
+            . "ical_imported_uid property",
+            $event->id,
+            $event->title;
+        next gcal_event;
+    }
+
+    # OK, if this event didn't appear in the iCal feed, it has been deleted at
+    # the other end, so we should delete it from our Google calendar:
+    if (!$events{$ical_uid}) {
+        printf "Event %s (%s) should be deleted\n",
+            $event->id, $event->title;
+        # TODO: actually delete, once testing shows correct behaviour
+    }
+
+    # Now check for any differences, and update if required
+
+}
+
+
+
