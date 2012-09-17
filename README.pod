@@ -1,0 +1,40 @@
+=head1 ical-to-google-calendar
+
+=head1 DESCRIPTION
+
+A simple Perl script to parse an iCal-format (.ics) file, and update a Google
+Calendar with it, via the Google Calendar API.
+
+=head1 WHY?
+
+Why not just add the iCal feed URL to Google Calendar and let them handle it?
+
+Because they update horribly slowly (expect about once every 24 hours).
+
+Calendaring is a time-sensitive thing; I don't want to wait a full day for
+updates to take effect (by the time Google re-fetch the feed and update my
+calendar, it could be too late!).
+
+
+=head1 CONFIGURATION
+
+The script will read your Google account details from C<~/.netrc>, where you
+should specify them as e.g.:
+
+    machine calendar.google.com
+    login yourgoogleusername
+    password supersecretpassword
+
+Of course, you'll want to ensure that file is well protected.
+
+
+=head1 USAGE
+
+    ./ical-to-gcal --calendar 'Calendar Name' ical_url
+
+The script will fetch the iCal calendar feed, then for each event in it,
+add/update an event in your Google Calendar (the ID from the iCal feed is added
+in the extra data of the event in the Google Calendar, so the script can match
+them up next time).
+
+
