@@ -114,6 +114,13 @@ for my $ical_uid (keys %ical_events) {
     print "Need to create ical event $ical_uid in gcal\n";
 
     # TODO: create the event
+    my $ical_event = $ical_events{$ical_uid};
+    my $gcal_event = Net::Google::Calendar::Entry->new;
+    $gcal_event->title(    $ical_event->{SUMMARY}  );
+    $gcal_event->location( $ical_event->{LOCATION} );
+    $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
+    $gcal->add_entry($gcal_event)
+        or warn "Failed to add gCal event for $ical_uid";
 }
 
 
