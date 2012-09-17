@@ -75,8 +75,9 @@ $gcal->set_calendar($desired_calendar);
 # them in a hash keyed by the UID; if that UID no longer appears in the ical
 # feed, it's one to delete.
 
-gcal_event:
 my %gcal_events;
+
+gcal_event:
 for my $event ($gcal->get_events) {
     my $ical_uid = $event->extended_property('ical_imported_uid');
 
