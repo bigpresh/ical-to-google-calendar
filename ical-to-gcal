@@ -79,7 +79,7 @@ my %gcal_events;
 
 gcal_event:
 for my $event ($gcal->get_events) {
-    my ($ical_uid) = $event->content =~ m{\[ical_imported_uid:(.+)\]};
+    my ($ical_uid) = $event->content->body =~ m{\[ical_imported_uid:(.+)\]};
 
     # If there's no ical uid, we presumably didn't create this, so leave it
     # alone
@@ -94,9 +94,10 @@ for my $event ($gcal->get_events) {
     # OK, if this event didn't appear in the iCal feed, it has been deleted at
     # the other end, so we should delete it from our Google calendar:
     if (!$ical_events{$ical_uid}) {
-        printf "Event %s (%s) should be deleted\n",
+        printf "Deleting event %s (%s) (no longer found in iCal feed)\n",
             $event->id, $event->title;
-        # TODO: actually delete, once testing shows correct behaviour
+        $gcal->delete_entry($event)
+            or warn "Failed to delete an event from Google Calendar";
     }
 
     # Now check for any differences, and update if required
