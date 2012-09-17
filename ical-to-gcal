@@ -125,6 +125,7 @@ for my $ical_uid (keys %ical_events) {
     $gcal_event->title(    $ical_event->{SUMMARY}  );
     $gcal_event->location( $ical_event->{LOCATION} );
     $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
+    $gcal_event->extended_property('ical_imported_uid', $ical_uid);
 
     my $method = exists $gcal_events{$ical_uid} ? 'update_entry' : 'add_entry';
     $gcal->$method($gcal_event)
