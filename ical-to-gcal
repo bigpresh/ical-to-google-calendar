@@ -145,28 +145,43 @@ for my $ical_uid (keys %ical_events) {
     
     my ($method, $gcal_event);
 
-    if (exists $gcal_events{$ical_uid}) {
-        $gcal_event = $gcal_events{$ical_uid};
-        $method = 'update_entry';
-        print "Need to update ical event $ical_uid in gcal\n";
-    } else {
-        $gcal_event = Net::Google::Calendar::Entry->new;
-        $method = 'add_entry';
-        print "Need to create new gcal event for $ical_uid\n";
-    }
-
     my $ical_event = $ical_events{$ical_uid};
-    $gcal_event->title(    $ical_event->{SUMMARY}  );
-    $gcal_event->location( $ical_event->{LOCATION} );
-    $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
-
-    if ($method eq 'add_entry') {
-        $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
-    }
+    my $gcal_event = ical_event_to_gcal_event(
+        $ical_event, $gcal_events{$ical_uid}
+    );
+    my $method = exists $gcal_events{$ical_uid}
+        ? 'update_entry' : 'add_entry';
 
     $gcal->$method($gcal_event)
         or warn "Failed to $method for $ical_uid";
 }
 
 
+# Given an iCal event hash (from iCal::Parser) (and possibly a
+# Net::Google::Calender event object to update), return an appropriate Google
+# Calendar event object (either the one given, after updating it, or a newly
+# populated one)
+# Note: does not actually add/update the event on the calendar, just returns the
+# event object.
+sub ical_event_to_gcal_event {
+    my ($ical_event, $gcal_event) = @_;
+    
+    if (ref $ical_event ne 'HASH') {
+        die "Given invalid iCal event";
+    }
+    if (defined $gcal_event && (!blessed($gcal_event) ||
+        !$gcal_event->isa('Net::Google::Calendar::Event')))
+    {
+        die "Given invalid Google Calendar event - what is it?";
+    }
 
+    $gcal_event ||= Net::Google::Calendar::Event->new;
+
+    my $ical_uid = $ical_event->{UID};
+    $gcal_event->title(    $ical_event->{SUMMARY}  );
+    $gcal_event->location( $ical_event->{LOCATION} );
+    $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
+    $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
+
+    return $gcal_event;
+}
