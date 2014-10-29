@@ -15,6 +15,7 @@ use Net::Netrc;
 use iCal::Parser;
 use LWP::Simple;
 use Getopt::Long;
+use Digest::MD5;
 
 my ($calendar, $ical_url);
 Getopt::Long::GetOptions(
@@ -36,6 +37,12 @@ my $ic = iCal::Parser->new;
 
 my $ical = $ic->parse_strings($ical_data)
     or die "Failed to parse iCal data";
+
+# Hash the feed URL, so we can use it along with the event ID to uniquely
+# identify events - and when removing events that aren't in the feed any more,
+# remove only those which came from this feed, if the user is using multiple
+# feeds.  (10 characters of the hash should be enough to be reliable enough.)
+my $feed_url_hash = substr(Digest::MD5->md5_hex($ical_url), 0, 10);
 
 # We get events keyed by year, month, day - we just want a flat list of events
 # to walk through.  Do this keyed by the event ID, so that multiple-day events
@@ -88,15 +95,30 @@ my %gcal_events;
 
 gcal_event:
 for my $event ($gcal->get_events) {
-    my ($ical_uid) = $event->content->body =~ m{\[ical_imported_uid:(.+)\]};
+    my ($ical_feed_hash, $ical_uid) 
+        = $event->content->body =~ m{\[ical_imported_uid:(.+)/(.+)\]};
 
     # If there's no ical uid, we presumably didn't create this, so leave it
     # alone
     if (!$ical_uid) {
-        warn sprintf "Event %s (%s) ignored as it has no "
-            . "ical_imported_uid property",
-            $event->id,
-            $event->title;
+        # Special-case, though: previous versions of this script didn't store
+        # the feed hash, so if we have only the event UID, assume it was this
+        # feed so the script continues working
+        if ($ical_uid 
+            = $event->content->body =~ m{\[ical_imported_uid:(.+)\]}
+        ) {
+            $ical_feed_hash = $feed_url_hash;
+        } else {
+            warn sprintf "Event %s (%s) ignored as it has no "
+                . "ical_imported_uid property",
+                $event->id,
+                $event->title;
+            next gcal_event;
+        }
+    }
+
+    # OK, if the event isn't for this feed, let it be:
+    if ($ical_feed_hash ne $feed_url_hash) {
         next gcal_event;
     }
 
@@ -139,7 +161,7 @@ for my $ical_uid (keys %ical_events) {
     $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
 
     if ($method eq 'add_entry') {
-        $gcal_event->content("[ical_imported_uid:$ical_uid]");
+        $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
     }
 
     $gcal->$method($gcal_event)
