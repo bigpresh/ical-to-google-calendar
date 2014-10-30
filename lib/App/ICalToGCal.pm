@@ -39,6 +39,22 @@ add/update events in your Google Calendar to match it:
 
   ical-to-gcal --calendar="Google Calendar Name" --ical-url=....
 
+You'll need to have put your login details in C<~/.netrc>...
+
+=head1 CONFIGURATION
+
+Google account details to be used to access your Google Calendar are stored in
+the standard C<~/.netrc> file - your C<~/.netrc> file in your home directory
+should contain:
+
+    machine calendar.google.com
+    login yourgoogleaccountusername
+    password hunter2
+
+Of course, you'll want to ensure that file is protected (kept readable by you
+only, etc).
+
+
 
 =head1 CLASS METHODS
 
