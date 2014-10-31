@@ -7,7 +7,6 @@ use Net::Google::Calendar;
 use Net::Netrc;
 use iCal::Parser;
 use LWP::Simple;
-use Getopt::Long;
 use Digest::MD5;
 
 =head1 NAME
