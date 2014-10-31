@@ -1,0 +1,6 @@
+Changes
+lib/App/ICalToGCal.pm
+Makefile.PL
+MANIFEST
+README
+bin/ical-to-gcal
