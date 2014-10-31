@@ -11,6 +11,7 @@
 
 use strict;
 use App::ICalToGCal;
+use Getopt::Long;
 
 my ($calendar, $ical_url);
 Getopt::Long::GetOptions(
