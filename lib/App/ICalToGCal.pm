@@ -6,7 +6,7 @@ use strict;
 use Net::Google::Calendar;
 use Net::Netrc;
 use iCal::Parser;
-use LWP::Simple;
+use LWP::UserAgent;
 use Digest::MD5;
 
 =head1 NAME
@@ -99,12 +99,17 @@ the result.
 sub fetch_ical {
     my ($class, $ical_url) = @_;
 
-    my $ical_data = LWP::Simple::get($ical_url)
-        or die "Failed to fetch $ical_url";
+    my $ua = LWP::UserAgent->new;
+    $ua->agent(__PACKAGE__ . "/" . $VERSION);
+
+    my $response = $ua->get($ical_url);
+    if (!$response->is_success) {
+        die "Failed to fetch $ical_url - " . $response->status_line;
+    }
 
     my $ic = iCal::Parser->new;
 
-    my $ical = $ic->parse_strings($ical_data)
+    my $ical = $ic->parse_strings($response->decoded_content)
         or die "Failed to parse iCal data";
 
     return $ical;
