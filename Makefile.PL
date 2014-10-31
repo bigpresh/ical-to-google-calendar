@@ -10,6 +10,7 @@ WriteMakefile(
     ABSTRACT_FROM    => 'lib/App/ICalToGCal.pm',
     LICENSE          => 'Artistic_2_0',
     PL_FILES         => {},
+    EXE_FILES        => [ 'bin/ical-to-gcal' ],
     MIN_PERL_VERSION => 5.010,
     CONFIGURE_REQUIRES => {
         'ExtUtils::MakeMaker' => 0,
