@@ -3,6 +3,7 @@ package App::ICalToGCal;
 our $VERSION = 0.01;
 
 use strict;
+use DateTime;
 use Net::Google::Calendar;
 use Net::Netrc;
 use iCal::Parser;
@@ -107,7 +108,11 @@ sub fetch_ical {
         die "Failed to fetch $ical_url - " . $response->status_line;
     }
 
-    my $ic = iCal::Parser->new;
+    my $ic = iCal::Parser->new(
+        start => DateTime->now->subtract( years => 5 ),
+        end   => DateTime->now->add( years => 5 ),
+        debug => 1,
+    );
 
     my $ical = $ic->parse_strings($response->decoded_content)
         or die "Failed to parse iCal data";
