@@ -5,7 +5,7 @@ our $VERSION = 0.01;
 use strict;
 use DateTime;
 use Net::Google::Calendar;
-use Net::Google::Calendar::Event;
+use Net::Google::Calendar::Entry;
 use Net::Netrc;
 use iCal::Parser;
 use LWP::UserAgent;
@@ -258,7 +258,7 @@ sub ical_event_to_gcal_event {
         die "Given invalid Google Calendar event - what is it?";
     }
 
-    $gcal_event ||= Net::Google::Calendar::Event->new;
+    $gcal_event ||= Net::Google::Calendar::Entry->new;
 
     my $ical_uid = $ical_event->{UID};
     $gcal_event->title(    $ical_event->{SUMMARY}  );
