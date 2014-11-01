@@ -74,7 +74,7 @@ sub select_google_calendar {
     my ($user, $pass) = $mach->lpa;
 
 
-    my $gcal = Net::Google::Calendar->new;
+    my $gcal = $class->gcal_obj;
     $gcal->login($user, $pass)
         or die "Google Calendar login failed";
 
@@ -263,7 +263,20 @@ sub ical_event_to_gcal_event {
     return $gcal_event;
 }
 
+# Allow the Net::Google::Calendar object to be overriden (e.g. for mocked tests)
+{
+    my $gcal;
+    sub gcal_obj {
+        my $class = shift;
+        if (@_) {
+            $gcal = shift;
+        }
 
+        return $gcal ||= Net::Google::Calendar->new;
+    }
+}
+
+1; # That's all, folks!
 
 =head1 AUTHOR
 
