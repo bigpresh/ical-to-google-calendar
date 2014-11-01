@@ -5,6 +5,7 @@ our $VERSION = 0.01;
 use strict;
 use DateTime;
 use Net::Google::Calendar;
+use Net::Google::Calendar::Event;
 use Net::Netrc;
 use iCal::Parser;
 use LWP::UserAgent;
