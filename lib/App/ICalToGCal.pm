@@ -3,13 +3,16 @@ package App::ICalToGCal;
 our $VERSION = 0.01;
 
 use strict;
+use Data::ICal;
+use Date::ICal::Duration;
 use DateTime;
+use DateTime::Format::ISO8601;
 use Net::Google::Calendar;
 use Net::Google::Calendar::Entry;
 use Net::Netrc;
-use iCal::Parser;
 use LWP::UserAgent;
 use Digest::MD5;
+use Scalar::Util qw(blessed);
 
 =head1 NAME
 
@@ -109,16 +112,10 @@ sub fetch_ical {
         die "Failed to fetch $ical_url - " . $response->status_line;
     }
 
-    my $ic = iCal::Parser->new(
-        start => DateTime->now->subtract( years => 5 ),
-        end   => DateTime->now->add( years => 5 ),
-        debug => 1,
-    );
-
-    my $ical = $ic->parse_strings($response->decoded_content)
+    my $ical = Data::ICal->new( data => $response->decoded_content )
         or die "Failed to parse iCal data";
 
-    return $ical;
+    return $ical->entries;
 
 }
 
@@ -148,29 +145,12 @@ appropriate updates to the Google Calendar.
 =cut
 
 sub update_google_calendar {
-    my ($class, $gcal, $ical, $feed_url_hash) = @_;
+    my ($class, $gcal, $ical_entries, $feed_url_hash) = @_;
 
-    # We get events keyed by year, month, day - we just want a flat list of
-    # events to walk through.  Do this keyed by the event ID, so that
-    # multiple-day events are handled appropriately.  We'll want this hash
-    # anyway to do a pass through all events on the Google Calendar, removing
-    # any that are no longer in the iCal feed.
 
-    my %ical_events;
-    for my $year (keys %{ $ical->{events} }) {
-        for my $month (keys %{ $ical->{events}{$year} }) {
-            for my $day (keys %{ $ical->{events}{$year}{$month} }) {
-                for my $event_uid (keys %{ $ical->{events}{$year}{$month}{$day} }) {
-                    $ical_events{ $event_uid }
-                        = $ical->{events}{$year}{$month}{$day}{$event_uid};
-                }
-            }
-        }
-    }
-
-    # Fetch all events from this calendar, parse out the ical feed's UID and
-    # whack them in a hash keyed by the UID; if that UID no longer appears in
-    # the ical feed, it's one to delete.
+    # Fetch all events from this Google calendar, parse out the ical feed's UID 
+    # and whack them in a hash keyed by the UID; if that UID no longer appears
+    # in Ithe ical feed, it's one to delete.
     my %gcal_events;
 
     gcal_event:
@@ -202,16 +182,18 @@ sub update_google_calendar {
             next gcal_event;
         }
 
+        # Assemble a hash on event ID of all the events we saw in the iCal feed,
+        # so we can quickly check
+
         # OK, if this event didn't appear in the iCal feed, it has been deleted at
         # the other end, so we should delete it from our Google calendar:
-        if (!$ical_events{$ical_uid}) {
+        if (!grep { $_->properties->{uid}->value eq $ical_uid } @$ical_entries)
+        {
             printf "Deleting event %s (%s) (no longer found in iCal feed)\n",
                 $event->id, $event->title;
             $gcal->delete_entry($event)
                 or warn "Failed to delete an event from Google Calendar";
         }
-
-        # Now check for any differences, and update if required
 
         # Remember that we found this event, so we can refer to it when looking for
         # events we need to create
@@ -221,22 +203,21 @@ sub update_google_calendar {
 
     # Now, walk through the ical events we found, and create/update Google Calendar
     # events
-    for my $ical_uid (keys %ical_events) {
+    for my $ical_event (@$ical_entries) {
         
         my ($method, $gcal_event);
+        my $ical_uid = get_ical_field($ical_event, 'uid');
 
-        my $ical_event = $ical_events{$ical_uid};
         my $gcal_event = $class->ical_event_to_gcal_event(
             $ical_event, $gcal_events{$ical_uid}, $feed_url_hash
         );
-        my $method = exists $gcal_events{$ical_uid}
+        my $ical_uid = $ical_event->properties->{uid}[0]->value;
+        my $method = exists $gcal_events{ $ical_uid } 
             ? 'update_entry' : 'add_entry';
 
         $gcal->$method($gcal_event)
             or warn "Failed to $method for $ical_uid";
     }
-
-
 }
 
 
@@ -249,7 +230,7 @@ sub update_google_calendar {
 sub ical_event_to_gcal_event {
     my ($class, $ical_event, $gcal_event, $feed_url_hash) = @_;
     
-    if (ref $ical_event ne 'HASH') {
+    if (!blessed($ical_event)  || !$ical_event->isa('Data::ICal::Entry::Event')) {
         die "Given invalid iCal event";
     }
     if (defined $gcal_event && (!blessed($gcal_event) ||
@@ -260,13 +241,66 @@ sub ical_event_to_gcal_event {
 
     $gcal_event ||= Net::Google::Calendar::Entry->new;
 
-    my $ical_uid = $ical_event->{UID};
-    $gcal_event->title(    $ical_event->{SUMMARY}  );
-    $gcal_event->location( $ical_event->{LOCATION} );
-    $gcal_event->when( $ical_event->{DTSTART}, $ical_event->{DTEND} );
+    my $ical_uid = get_ical_field($ical_event, 'uid');
+    $gcal_event->title(    get_ical_field($ical_event, 'summary'  )  );
+    $gcal_event->location( get_ical_field($ical_event, 'location' )  );
+    $gcal_event->when( 
+        get_ical_field($ical_event, 'dtstart'),
+        get_ical_field($ical_event, 'dtend'),
+    );
     $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
 
     return $gcal_event;
+}
+
+# Wrap the nastyness of Data::ICal::Property stuff away
+sub get_ical_field {
+    my ($ical_event, $field) = @_;
+    my $value;
+
+    if (!blessed($ical_event) || !$ical_event->isa('Data::ICal::Entry::Event')) {
+        die "get_ical_field called without iCal event (got [$ical_event])";
+    }
+
+    my $properties = $ical_event->properties;
+    if (my $prop = $properties->{$field}) {
+        $value = $prop->[0]->value;
+    }
+
+    # Auto-inflate dtstart/dtend properties into DateTime objects
+    if ($field =~ /^dt(start|end)$/ && $value) {
+        my $dt = DateTime::Format::ISO8601->parse_datetime($value)
+            or die "Failed to parse '$value' into a DateTime object!";
+        my $tz = $properties->{$field}[0]{'_parameters'}{TZID};
+        warn "Timezone for $field is '$tz'";
+        # TODO: if we didn't find a timezone, should we bail, or just leave the
+        # DT object in the flatong timezone and hope for the best?
+        if ($tz) {
+            $dt->set_time_zone($properties->{$field}[0]{'_parameters'}{TZID});
+        }
+        $value = $dt;
+    }
+
+    # If we wanted dtend and didn't find a value, but did find a duration, then
+    # we can calculate the value for dtend (as that's what we need to provide to
+    # Net::Google::Calendar::Entry->when() )
+    if ($field eq 'dtend' && !$value && exists $properties->{duration}) {
+        my $duration = $properties->{duration}[0]->value;
+        my $dur_obj = Date::ICal::Duration->new( ical => $duration );
+        my $elements = $dur_obj->as_elements;
+        delete $elements->{sign};
+        my $dtstart = get_ical_field($ical_event, 'dtstart');
+        my $dtend = $dtstart->clone->add(
+            map  { $_ => $elements->{$_} } 
+            grep { $elements->{$_} } keys %$elements
+        );
+        warn "Calculated end $dtend from $dtstart + $duration";
+        $value = $dtend;
+    }
+
+
+    warn "returning value '$value' for $field";
+    return $value;
 }
 
 # Allow the Net::Google::Calendar object to be overriden (e.g. for mocked tests)
