@@ -2,11 +2,14 @@
 use 5.006;
 use strict;
 use warnings FATAL => 'all';
+use Cwd;
+use File::Spec;
+use Test::Differences;
 use Test::MockObject;
 use Test::More;
 
-plan tests => 2;
-
+#plan tests => 2;
+#plan tests => 'no_plan';
 use_ok( 'App::ICalToGCal' ) || print "Bail out!\n";
 
 diag( "Testing App::ICalToGCal $App::ICalToGCal::VERSION, Perl $], $^X" );
@@ -37,6 +40,12 @@ $mock_gcal->mock(
         push @{ $self->{entries} }, $entry;
     }
 );
+$mock_gcal->mock(
+    'get_events',
+    sub {
+        return @{ shift->{entries} || [] };
+    },
+);
 # update_entry is a no-op here; the entry objects are references, and the entry
 # object will have been updated; update_entry would be called to sync the
 # changes to Google, so we do nothing.
@@ -49,5 +58,77 @@ is(
     "Got back our mocked Net::Google::Calendar object",
 );
 
+# We have some sample iCal data shipped with the dist; if we work out the
+# absolute path to them, we should be able to give a file:// URL to fetch_ical
+# and expect it to work.
+my @tests = (
+    {
+        ical_file => 'test1.ical',
+        expect_entries => [
 
+        ]
+    },
+    {
+        ical_file => 'allday.ical',
+        expect_entries => [
+        ],
+    },
+);
+
+for my $test_spec (@tests) {
+    my $ical_file = File::Spec->catfile(
+        Cwd::cwd(), 'ical-tests', $test_spec->{ical_file}
+    );
+    my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
+    ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
+    use Data::Dump;
+    warn Data::Dump::dump($ical_data);
+
+    ok(
+        App::ICalToGCal->update_google_calendar(
+            $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
+        ),
+        "update_google_calendar appeared to work",
+    );
+
+    warn "Events boil down to: " .
+    Data::Dump::dump(summarise_events([ $mock_gcal->get_events ]));
+
+    eq_or_diff(
+        [ $mock_gcal->get_events() ],
+        $test_spec->{expect_entries},
+        "Entries for $test_spec->{ical_file} look correct",
+    );
+
+}
+
+
+done_testing();
+
+
+# Given a set of Net::Google::Calendar::Entry objects, turn them into simple 
+# concise hashrefs we can give to Test::Differences to compare with
+# what the test says we should have got.
+sub summarise_events {
+    my $events = shift;
+
+    return [
+        map {
+            my $entry = $_;
+            my ($start, $end, $all_day) = $entry->when;
+            +{
+                # The simpler stuff:
+                (
+                    map { $_ => $entry->$_() }
+                        qw(title location status)
+                ),
+                # deflate datetimes:
+                when => join(' => ',
+                    (map { $_->iso8601 } ($start, $end))
+                ),
+                all_day => $all_day,
+            }
+        } @$events
+    ];
+}
 
