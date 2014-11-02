@@ -73,11 +73,18 @@ my @tests = (
         expect_entries => [
         ],
     },
+    {
+        # This test is based on Issue 6:
+        # https://github.com/bigpresh/ical-to-google-calendar/issues/6
+        ical_file => 'recurring.ical',
+        expect_entries => [
+        ],
+    },
 );
 
 for my $test_spec (@tests) {
     my $ical_file = File::Spec->catfile(
-        Cwd::cwd(), 'ical-tests', $test_spec->{ical_file}
+        Cwd::cwd(), 't', 'ical-data', $test_spec->{ical_file}
     );
     my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
     ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
