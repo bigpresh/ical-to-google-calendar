@@ -50,7 +50,14 @@ $mock_gcal->mock(
 # object will have been updated; update_entry would be called to sync the
 # changes to Google, so we do nothing.
 $mock_gcal->set_true('update_entry');
-$mock_gcal->set_true('is_our_mocked_object');
+$mock_gcal->mock(
+    'wipe_entries',
+    sub {
+        shift->{entries} = [];
+    }
+);
+
+
 App::ICalToGCal->gcal_obj($mock_gcal);
 is(
     App::ICalToGCal->gcal_obj(),
@@ -86,6 +93,14 @@ for my $test_spec (@tests) {
     my $ical_file = File::Spec->catfile(
         Cwd::cwd(), 't', 'ical-data', $test_spec->{ical_file}
     );
+
+    # Unless this test expects to be building upon the results of a previous
+    # test, wipe the contents of the mock gcal object, so we can compare the
+    # entries with what we expect to see, and not see things we didn't expect:
+    if (!$test_spec->{keep_previous}) {
+        $mock_gcal->wipe_entries;
+    }
+
     my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
     ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
     use Data::Dump;
