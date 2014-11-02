@@ -117,11 +117,8 @@ for my $test_spec (@tests) {
     my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
     ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
 
-    ok(
-        App::ICalToGCal->update_google_calendar(
-            $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
-        ),
-        "update_google_calendar appeared to work",
+    App::ICalToGCal->update_google_calendar(
+        $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
     );
 
     use Data::Dump;
