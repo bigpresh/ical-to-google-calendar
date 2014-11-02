@@ -116,8 +116,6 @@ for my $test_spec (@tests) {
 
     my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
     ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
-    use Data::Dump;
-    warn Data::Dump::dump($ical_data);
 
     ok(
         App::ICalToGCal->update_google_calendar(
@@ -126,11 +124,12 @@ for my $test_spec (@tests) {
         "update_google_calendar appeared to work",
     );
 
+    use Data::Dump;
     warn "Events boil down to: " .
     Data::Dump::dump(summarise_events([ $mock_gcal->get_events ]));
 
     eq_or_diff(
-        [ $mock_gcal->get_events() ],
+        summarise_events([ $mock_gcal->get_events() ]),
         $test_spec->{expect_entries},
         "Entries for $test_spec->{ical_file} look correct",
     );
