@@ -1,0 +1,12 @@
+Revision history for App-GCalToICal
+
+0.01    2014-11-??
+        [ NEAR RE-WRITE ]
+        - Turned old ical-to-gcal script into a CPAN distribution
+        - Switched from Parser::iCal to Data::ICal
+        - Added recurring events support
+        - Support multi-day events properly
+        - Refactored to provide testability
+        - Added tests
+
+
