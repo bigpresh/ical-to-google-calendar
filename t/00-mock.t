@@ -100,6 +100,10 @@ my @tests = (
         expect_entries => [
         ],
     },
+    {
+        ical_file => 'recurring2.ical',
+        expect_entries => [ ],
+    }
 );
 
 for my $test_spec (@tests) {
@@ -120,10 +124,6 @@ for my $test_spec (@tests) {
     App::ICalToGCal->update_google_calendar(
         $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
     );
-
-    use Data::Dump;
-    warn "Events boil down to: " .
-    Data::Dump::dump(summarise_events([ $mock_gcal->get_events ]));
 
     eq_or_diff(
         summarise_events([ $mock_gcal->get_events() ]),
@@ -158,6 +158,9 @@ sub summarise_events {
                     (map { $_->iso8601 } ($start, $end))
                 ),
                 all_day => $all_day,
+                ( rrule => $_->recurrence
+                    ? $_->recurrence->entries->[0]->properties->{rrule}[0]->value
+                    : '' )
             }
         } @$events
     ];
