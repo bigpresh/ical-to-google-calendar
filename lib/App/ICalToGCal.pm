@@ -233,6 +233,7 @@ sub ical_event_to_gcal_event {
     if (!blessed($ical_event)  || !$ical_event->isa('Data::ICal::Entry::Event')) {
         die "Given invalid iCal event";
     }
+    
     if (defined $gcal_event && (!blessed($gcal_event) ||
         !$gcal_event->isa('Net::Google::Calendar::Event')))
     {
@@ -248,6 +249,15 @@ sub ical_event_to_gcal_event {
         get_ical_field($ical_event, 'dtstart'),
         get_ical_field($ical_event, 'dtend'),
     );
+
+    # If there's a recurrence rule, handle it:
+    if (my $rrule = get_ical_field($ical_event, 'rrule')) {
+        # Odd that I can just provide the whole Data::ICal::Entry::Event object
+        # here; it's a shame Net::Google::Calendar doesn't understand how to
+        # take all details from it.
+        $gcal_event->recurrence($ical_event);
+    }
+
     $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
 
     return $gcal_event;
