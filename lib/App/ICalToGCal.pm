@@ -282,7 +282,6 @@ sub get_ical_field {
         my $dt = DateTime::Format::ISO8601->parse_datetime($value)
             or die "Failed to parse '$value' into a DateTime object!";
         my $tz = $properties->{$field}[0]{'_parameters'}{TZID};
-        warn "Timezone for $field is '$tz'";
         # TODO: if we didn't find a timezone, should we bail, or just leave the
         # DT object in the flatong timezone and hope for the best?
         if ($tz) {
