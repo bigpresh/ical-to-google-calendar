@@ -98,6 +98,22 @@ my @tests = (
         # https://github.com/bigpresh/ical-to-google-calendar/issues/6
         ical_file => 'recurring.ical',
         expect_entries => [
+            {
+                all_day => 0,
+                location => '',
+                rrule => '',
+                status => undef,
+                title => 'Test event',
+                when => '2015-11-18T02:00:00 => 2015-11-18T03:00:00'
+            },
+            {
+                all_day => 0,
+                location => '',
+                rrule => 'FREQ=WEEKLY;INTERVAL=1;UNTIL=20150207T065959Z;BYDAY=SA',
+                status => undef,
+                title => 'Tuesday SwingTime2',
+                when => '2015-02-04T02:00:00 => 2015-02-04T05:00:00'
+            },
         ],
     },
     {
