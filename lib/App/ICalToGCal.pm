@@ -304,7 +304,6 @@ sub get_ical_field {
             map  { $_ => $elements->{$_} } 
             grep { $elements->{$_} } keys %$elements
         );
-        warn "Calculated end $dtend from $dtstart + $duration";
         $value = $dtend;
     }
 
