@@ -308,8 +308,6 @@ sub get_ical_field {
         $value = $dtend;
     }
 
-
-    warn "returning value '$value' for $field";
     return $value;
 }
 
