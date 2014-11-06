@@ -74,17 +74,19 @@ my @tests = (
         expect_entries => [
             {
                 all_day  => 0,
-                location => "Home",
-                status   => undef,
-                title    => "Set up File Server",
-                when     => "2015-06-15T17:00:00 => 2015-06-15T18:00:00",
-            },
-            {
-                all_day  => 0,
                 location => "San Francisco",
+                rrule    => "",
                 status   => undef,
                 title    => "Apple WWDC",
                 when     => "2015-06-08T23:00:00 => 2015-06-09T23:00:00",
+            },
+            {
+                all_day  => 0,
+                location => "Home",
+                rrule    => "",
+                status   => undef,
+                title    => "Set up File Server",
+                when     => "2015-06-15T17:00:00 => 2015-06-15T18:00:00",
             },
         ]
     },
