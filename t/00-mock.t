@@ -1,4 +1,4 @@
-#!perl -T
+#!perl
 use 5.006;
 use strict;
 use warnings FATAL => 'all';
@@ -78,7 +78,7 @@ my @tests = (
                 rrule    => "",
                 status   => undef,
                 title    => "Apple WWDC",
-                when     => "2015-06-08T23:00:00 => 2015-06-09T23:00:00",
+                when     => "2015-06-06T00:00:00 => 2015-06-12T00:00:00",
             },
             {
                 all_day  => 0,
@@ -86,7 +86,7 @@ my @tests = (
                 rrule    => "",
                 status   => undef,
                 title    => "Set up File Server",
-                when     => "2015-06-15T17:00:00 => 2015-06-15T18:00:00",
+                when     => "2015-06-15T18:00:00 => 2015-06-15T19:00:00",
             },
         ]
     },
