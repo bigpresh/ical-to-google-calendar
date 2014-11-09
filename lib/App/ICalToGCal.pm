@@ -264,6 +264,9 @@ sub ical_event_to_gcal_event {
 }
 
 # Wrap the nastyness of Data::ICal::Property stuff away
+# Cache the timezone-specific "base" objects we'll parse to
+# DateTime::Format::ISO8601->set_base_datetime for performance
+my %cached_base_dt;
 sub get_ical_field {
     my ($ical_event, $field) = @_;
     my $value;
@@ -283,16 +286,24 @@ sub get_ical_field {
         # DateTime::Format::ISO8601 can use that to copy the timezone; if we
         # just set it with set_time_zone() afterwards, the local time will
         # change!
-        my $dt_base = DateTime->now;
+        my $dt_parser = DateTime::Format::ISO8601->new;
+
         # TODO: if we didn't find a timezone, should we bail, or just leave the
         # DT object in the flatong timezone and hope for the best?
         my $tz = $properties->{$field}[0]{'_parameters'}{TZID};
         if ($tz) {
-            $dt_base->set_time_zone($properties->{$field}[0]{'_parameters'}{TZID});
+            if (!$cached_base_dt{$tz}) {
+                # The date represented here is unimportant; the timezone is what
+                # matters.
+                my $dt_base = DateTime->new(
+                    year      => 2015,
+                    month     => 1,
+                    day       => 1,
+                    time_zone => $tz,
+                );
+                $cached_base_dt{$tz} = $dt_base;
+            }
         }
-
-        my $dt_parser = DateTime::Format::ISO8601->new;
-        $dt_parser->set_base_datetime( object => $dt_base );
         my $dt = $dt_parser->parse_datetime($value)
             or die "Failed to parse '$value' into a DateTime object!";
         $value = $dt;
