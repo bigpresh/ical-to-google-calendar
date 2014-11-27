@@ -143,12 +143,9 @@ for my $test_spec (@tests) {
         $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
     );
 
-    # The fucktardery adding badgers to each event in the expect_entries is to
-    # force Test::Differences not to use the unhelpful flatten style:
-    # https://rt.cpan.org/Public/Bug/Display.html?id=95446
     eq_or_diff(
         summarise_events([ $mock_gcal->get_events() ]),
-        [ map { +{ %$_, badgers => [] } } @{ $test_spec->{expect_entries} } ],
+        $test_spec->{expect_entries},
         "Entries for $test_spec->{ical_file} look correct",
     );
 
@@ -181,11 +178,7 @@ sub summarise_events {
                 all_day => $all_day,
                 ( rrule => $_->recurrence
                     ? $_->recurrence->entries->[0]->properties->{rrule}[0]->value
-                    : '' ),
-
-                # HACK to make Test::Differences not use the unhelpful flatten
-                # style
-                badgers => [],
+                    : '' )
             }
         } @$events
     ];
