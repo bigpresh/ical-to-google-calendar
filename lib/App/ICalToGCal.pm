@@ -6,7 +6,7 @@ use strict;
 use Data::ICal;
 use Date::ICal::Duration;
 use DateTime;
-use DateTime::Format::ISO8601;
+use DateTime::Format::DateParse;
 use Net::Google::Calendar;
 use Net::Google::Calendar::Entry;
 use Net::Netrc;
@@ -245,9 +245,18 @@ sub ical_event_to_gcal_event {
     my $ical_uid = get_ical_field($ical_event, 'uid');
     $gcal_event->title(    get_ical_field($ical_event, 'summary'  )  );
     $gcal_event->location( get_ical_field($ical_event, 'location' )  );
+    # Set the all-day flag if the start datetime and end datetime are both
+    # 00:00:00
+    my @midnights = grep {
+        $_->hms eq '00:00:00'
+    } map { 
+        warn "getting $_"; get_ical_field($ical_event, $_) 
+    } (qw(dtstart dtend));
+    my $all_day = @midnights == 2 ? 1 : 0;
     $gcal_event->when( 
         get_ical_field($ical_event, 'dtstart'),
         get_ical_field($ical_event, 'dtend'),
+        $all_day,
     );
 
     # If there's a recurrence rule, handle it:
@@ -264,9 +273,6 @@ sub ical_event_to_gcal_event {
 }
 
 # Wrap the nastyness of Data::ICal::Property stuff away
-# Cache the timezone-specific "base" objects we'll pass to
-# DateTime::Format::ISO8601->set_base_datetime for performance
-my %cached_base_dt;
 sub get_ical_field {
     my ($ical_event, $field) = @_;
     my $value;
@@ -282,29 +288,11 @@ sub get_ical_field {
 
     # Auto-inflate dtstart/dtend properties into DateTime objects
     if ($field =~ /^dt(start|end)$/ && $value) {
-        # Get a DateTime object and set the timezone on it, so that
-        # DateTime::Format::ISO8601 can use that to copy the timezone; if we
-        # just set it with set_time_zone() afterwards, the local time will
-        # change!
-        my $dt_parser = DateTime::Format::ISO8601->new;
 
         # TODO: if we didn't find a timezone, should we bail, or just leave the
         # DT object in the floating timezone and hope for the best?
         my $tz = $properties->{$field}[0]{'_parameters'}{TZID};
-        if ($tz) {
-            if (!$cached_base_dt{$tz}) {
-                # The date represented here is unimportant; the timezone is what
-                # matters.
-                my $dt_base = DateTime->new(
-                    year      => 2015,
-                    month     => 1,
-                    day       => 1,
-                    time_zone => $tz,
-                );
-                $cached_base_dt{$tz} = $dt_base;
-            }
-        }
-        my $dt = $dt_parser->parse_datetime($value)
+        my $dt = DateTime::Format::DateParse->parse_datetime($value, $tz)
             or die "Failed to parse '$value' into a DateTime object!";
         $value = $dt;
     }
