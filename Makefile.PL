@@ -26,7 +26,7 @@ WriteMakefile(
         'Data::ICal' => 0,
         'Date::ICal::Duration' => 0,
         'DateTime' => 0,
-        'DateTime::Format::ISO8601' => 0,
+        'DateTime::Format::DateParse' => 0,
         'Digest::MD5' => 0,
         'Scalar::Util' => 0,
     },
