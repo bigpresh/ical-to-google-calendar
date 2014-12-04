@@ -264,7 +264,7 @@ sub ical_event_to_gcal_event {
 }
 
 # Wrap the nastyness of Data::ICal::Property stuff away
-# Cache the timezone-specific "base" objects we'll parse to
+# Cache the timezone-specific "base" objects we'll pass to
 # DateTime::Format::ISO8601->set_base_datetime for performance
 my %cached_base_dt;
 sub get_ical_field {
