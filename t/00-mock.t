@@ -93,6 +93,14 @@ my @tests = (
     {
         ical_file => 'allday.ical',
         expect_entries => [
+            {
+                all_day => 0,
+                location => '',
+                rrule => '',
+                status => undef,
+                title => 'all day',
+                when => '2004-11-15T00:00:00 => 2004-11-16T00:00:00'
+            },
         ],
     },
     {
