@@ -289,7 +289,7 @@ sub get_ical_field {
         my $dt_parser = DateTime::Format::ISO8601->new;
 
         # TODO: if we didn't find a timezone, should we bail, or just leave the
-        # DT object in the flatong timezone and hope for the best?
+        # DT object in the floating timezone and hope for the best?
         my $tz = $properties->{$field}[0]{'_parameters'}{TZID};
         if ($tz) {
             if (!$cached_base_dt{$tz}) {
