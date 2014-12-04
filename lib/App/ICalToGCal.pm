@@ -21,7 +21,8 @@ App::ICalToGCal - import iCal feeds into a Google Calendar
 =head1 DESCRIPTION
 
 A command line script to fetch an iCal calendar feed, and create corresponding
-events in a Google Calendar.
+events in a Google Calendar (with most of the code in a module, in case it's 
+useful to use from other scripts).
 
 =head1 WHY?
 
@@ -34,7 +35,8 @@ best).
 
 Calendaring is a time-sensitive thing; I don't want to wait a full day for
 updates to take effect (by the time Google re-fetch the feed and update your
-calendar, it could be too late!).
+calendar, it could be too late!) - I'd rather push the changes to my Google
+Calendar as soon as I see them from the source iCal feeds.
 
 =head1 SYNOPSIS
 
@@ -58,6 +60,8 @@ should contain:
 Of course, you'll want to ensure that file is protected (kept readable by you
 only, etc).
 
+TODO: I may make it possible to supply credentials via other methods if there's
+demand for it.
 
 
 =head1 CLASS METHODS
@@ -96,7 +100,7 @@ sub select_google_calendar {
 
 =head2 fetch_ical
 
-Given an iCal feed URL, fetches it, parses it using L<iCal::Parser>, and returns
+Given an iCal feed URL, fetches it, parses it using L<Data::ICal>, and returns
 the result.
 
 =cut
@@ -267,7 +271,7 @@ sub ical_event_to_gcal_event {
         $gcal_event->recurrence($ical_event);
     }
 
-    $gcal_event->content("[ical_imported_uid:$feed_url_hash/$ical_uid]");
+    $gcal_event->content("Fuck it: [ical_imported_uid:$feed_url_hash/$ical_uid]");
 
     return $gcal_event;
 }
