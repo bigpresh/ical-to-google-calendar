@@ -86,7 +86,7 @@ my @tests = (
                 rrule    => "",
                 status   => undef,
                 title    => "Set up File Server",
-                when     => "2015-06-15T18:00:00 => 2015-06-15T19:00:00",
+                when     => "2015-06-15T21:00:00 => 2015-06-15T22:00:00",
             },
         ]
     },
