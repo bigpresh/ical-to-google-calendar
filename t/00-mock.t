@@ -234,7 +234,9 @@ sub summarise_events {
                 all_day => $all_day,
                 ( rrule => $_->recurrence
                     ? $_->recurrence->entries->[0]->properties->{rrule}[0]->value
-                    : '' )
+                    : ''
+                ),
+                content => $entry->content->body,
             }
         } @$events
     ];
