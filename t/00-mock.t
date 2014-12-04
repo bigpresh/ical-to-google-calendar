@@ -4,7 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use Cwd;
 use File::Spec;
-use Test::Differences;
+use Test::Differences::Color;
 use Test::MockObject;
 use Test::More;
 
@@ -118,10 +118,50 @@ my @tests = (
             },
         ],
     },
+    
+    # Now, process test1.ical again, but this time, don't clear the mock gcal
+    # object, so we can check the events from the previous test are still 
+    # present in addition to the events from test1.ical (i.e. test that we can
+    # process multiple iCal feeds and have the events all end up on the same
+    # Google Calendar...)
     {
-        ical_file => 'recurring2.ical',
-        expect_entries => [ ],
-    }
+        keep_previous => 1,
+        ical_file => 'test1.ical',
+        expect_entries => [
+            {
+                all_day => 0,
+                location => '',
+                rrule => '',
+                status => undef,
+                title => 'Test event',
+                when => '2015-11-18T02:00:00 => 2015-11-18T03:00:00'
+            },
+            {
+                all_day => 0,
+                location => '',
+                rrule => 'FREQ=WEEKLY;INTERVAL=1;UNTIL=20150207T065959Z;BYDAY=SA',
+                status => undef,
+                title => 'Tuesday SwingTime2',
+                when => '2015-02-04T02:00:00 => 2015-02-04T05:00:00'
+            },
+            {
+                all_day  => 0,
+                location => "San Francisco",
+                rrule    => "",
+                status   => undef,
+                title    => "Apple WWDC",
+                when     => "2015-06-06T00:00:00 => 2015-06-12T00:00:00",
+            },
+            {
+                all_day  => 0,
+                location => "Home",
+                rrule    => "",
+                status   => undef,
+                title    => "Set up File Server",
+                when     => "2015-06-15T18:00:00 => 2015-06-15T19:00:00",
+            },
+        ]
+    },
 );
 
 for my $test_spec (@tests) {
