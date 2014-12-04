@@ -70,6 +70,7 @@ is(
 # and expect it to work.
 my @tests = (
     {
+        test_title => "Basic tests",
         ical_file => 'test1.ical',
         expect_entries => [
             {
@@ -91,6 +92,7 @@ my @tests = (
         ]
     },
     {
+        test_title => "One all-day event",
         ical_file => 'allday.ical',
         expect_entries => [
             {
@@ -106,6 +108,7 @@ my @tests = (
     {
         # This test is based on Issue 6:
         # https://github.com/bigpresh/ical-to-google-calendar/issues/6
+        test_title => "Recurring events (Issue #6)",
         ical_file => 'recurring.ical',
         expect_entries => [
             {
@@ -135,6 +138,7 @@ my @tests = (
     {
         keep_previous => 1,
         ical_file => 'test1.ical',
+        test_title => 'Adding items from another feed to previous',
         expect_entries => [
             {
                 all_day => 0,
@@ -173,6 +177,7 @@ my @tests = (
 );
 
 for my $test_spec (@tests) {
+    diag($test_spec->{test_title}) if $test_spec->{test_title};
     my $ical_file = File::Spec->catfile(
         Cwd::cwd(), 't', 'ical-data', $test_spec->{ical_file}
     );
@@ -185,7 +190,10 @@ for my $test_spec (@tests) {
     }
 
     my $ical_data = App::ICalToGCal->fetch_ical("file://$ical_file");
-    ok(ref $ical_data, "Got a parsed iCal result from $ical_file");
+    ok(
+        ref $ical_data, 
+        "Got a parsed iCal result from $test_spec->{ical_file}"
+    );
 
     App::ICalToGCal->update_google_calendar(
         $mock_gcal, $ical_data, App::ICalToGCal->hash_ical_url($ical_file)
