@@ -74,7 +74,7 @@ my @tests = (
         ical_file => 'test1.ical',
         expect_entries => [
             {
-                all_day  => 0,
+                all_day  => 1,
                 location => "San Francisco",
                 rrule    => "",
                 status   => undef,
@@ -96,7 +96,7 @@ my @tests = (
         ical_file => 'allday.ical',
         expect_entries => [
             {
-                all_day => 0,
+                all_day => 1,
                 location => '',
                 rrule => '',
                 status => undef,
@@ -157,7 +157,7 @@ my @tests = (
                 when => '2015-02-04T02:00:00 => 2015-02-04T05:00:00'
             },
             {
-                all_day  => 0,
+                all_day  => 1,
                 location => "San Francisco",
                 rrule    => "",
                 status   => undef,
