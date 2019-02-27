@@ -1,5 +1,18 @@
 =head1 ical-to-google-calendar
 
+
+=head1 NOTICE
+
+At present, this script WILL NOT WORK, as it relies on the CPAN module
+L<Net::Google::Calendar|https://metacpan.org/pod/Net::Google::Calendar> which
+(at time of writing) uses an older API version which Google no longer support.
+
+To get this working, either Net::Google::Calendar needs updating to use their
+newer API, or this script needs to be switched to using
+L<Net::Google::CalendarV3|https://metacpan.org/pod/Net::Google::CalendarV3> but
+I don't think it's a straightforward drop-in replacement, and I haven't had time
+to do it (I no longer use this script myself.  However, pull requests welcome!)
+
 =head1 DESCRIPTION
 
 A simple Perl script to parse an iCal-format (.ics) file, and update a Google
