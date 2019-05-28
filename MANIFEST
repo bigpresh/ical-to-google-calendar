@@ -1,0 +1,10 @@
+Changes
+lib/App/ICalToGCal.pm
+Makefile.PL
+MANIFEST
+README
+bin/ical-to-gcal
+t/00-mock.t
+t/ical-data/allday.ical
+t/ical-data/recurring2.ical
+t/ical-data/test1.ical

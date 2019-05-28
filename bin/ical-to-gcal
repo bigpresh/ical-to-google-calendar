@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+
+# ical-to-gcal
+# A quick script to fetch and parse an iCal/vcal feed, and update a named Google
+# Calendar.
+#
+# See the README in the repo for more details on why and how to use it:
+# https://github.com/bigpresh/ical-to-google-calendar
+#
+# David Precious <davidp@preshweb.co.uk>
+
+use strict;
+use App::ICalToGCal;
+use Getopt::Long;
+
+my ($calendar, $ical_url);
+Getopt::Long::GetOptions(
+    "calendar|c=s"      => \$calendar,
+    "ical_url|ical|i=s" => \$ical_url,
+) or die "Failed to parse options";
+
+
+if (!$ical_url) {
+    die "An iCal URL must be provided (--ical_url=....)";
+}
+if (!$calendar) {
+    die "You must specify the calendar name (--calendar=...)";
+}
+
+
+my $gcal = App::ICalToGCal->select_google_calendar($calendar);
+
+my $ical = App::ICalToGCal->fetch_ical($ical_url);
+
+App::ICalToGCal->update_google_calendar(
+    $gcal,
+    $ical,
+    App::ICalToGCal->hash_ical_url($ical_url),
+    );
+
+
